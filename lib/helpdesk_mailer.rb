@@ -66,6 +66,18 @@ class HelpdeskMailer < ActionMailer::Base
     if @references_objects
       headers[:references] = @references_objects.collect {|o| "<#{self.class.references_for(o)}>"}.join(' ')
     end
+
+    sender_tmp = sender.present? && sender || Setting.mail_from
+    sender_tmp = sender_tmp.split('@')
+    sender_params = "#{sender_tmp[0]}+#{issue.id}@#{sender_tmp[1]}"
+
+    #puts ":=============================================================="
+    #puts sender
+    #puts sender_params
+    #puts ":=============================================================="
+    #puts Setting.mail_from
+    #puts ":=============================================================="
+
     # create mail object to deliver
     mail = if text.present? || reply.present?
       # sending out the journal note to the support client
@@ -73,7 +85,7 @@ class HelpdeskMailer < ActionMailer::Base
       t = text.present? ? "#{text}\n\n#{footer}" : reply
       mail(
         :from     => sender.present? && sender || Setting.mail_from,
-        :reply_to => sender.present? && sender || Setting.mail_from,
+        :reply_to => sender_params,
         :to       => recipient,
         :subject  => subject,
         :body     => expand_macros(t, issue, journal),
@@ -87,7 +99,7 @@ class HelpdeskMailer < ActionMailer::Base
       @issue_url = url_for(:controller => 'issues', :action => 'show', :id => issue)
       mail(
         :from     => sender.present? && sender || Setting.mail_from,
-        :reply_to => sender.present? && sender || Setting.mail_from,
+        :reply_to => sender_params,
         :to       => recipient,
         :subject  => subject,
         :date     => Time.zone.now,
